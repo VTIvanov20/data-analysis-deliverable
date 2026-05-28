@@ -49,15 +49,6 @@ unique(dataset$PRODUCTLINE)
 View(dataset)
 
 
-# ====== Lookup for necessary values
-
-dataset_fields <- colnames(dataset)
-entries <- paste("True", 1:length(dataset_fields))
-
-necessary_for_delivery <- data.frame(
-  Flags = entries,
-  row.names = dataset_fields
-)
 
 
 
