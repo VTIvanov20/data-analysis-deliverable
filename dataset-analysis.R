@@ -1,9 +1,10 @@
-#install.packages(c("tidyverse", "leaflet", "tidygeocoder", "scales"))
+#install.packages(c("tidyverse", "leaflet", "tidygeocoder", "scales", "htmlwidgets"))
 
 library(tidyverse)
 library(leaflet)        # nice to see this is also in r
 library(tidygeocoder)   # proved quite useful
 library(scales)
+library(htmlwidgets)    # read about this and wanted to experiment with saving this as an html file
 
 dataset <- read_csv(
   "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/sales_data_sample.csv",
@@ -65,3 +66,9 @@ sales_map <- leaflet(sales_geocoded) %>%
   )
 
 sales_map
+
+saveWidget(
+  sales_map,
+  "sales_leaflet_map.html",
+  selfcontained = TRUE
+)
