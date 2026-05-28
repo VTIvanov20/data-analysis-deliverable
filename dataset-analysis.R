@@ -11,6 +11,8 @@ dataset <- read_csv(
   locale = locale(encoding = "latin1")
 )
 
+# A small chain of piping operations to get only sales by location
+# most important step here is basically that we decided to remove the NA values from the dataset and work from there
 sales_by_location <- dataset %>%
   group_by(CITY, COUNTRY, TERRITORY) %>%
   summarise(
@@ -29,19 +31,16 @@ sales_geocoded <- sales_geocoded %>%
     bubble_size = rescale(total_sales, to = c(4, 25))
   )
 
-sales_geocoded <- sales_geocoded %>%
-  mutate(
-    bubble_size = rescale(total_sales, to = c(4, 25))
-  )
-
+# defining the palette that will be used
+# saw online that there are sets, so we tried it out
 pal <- colorFactor(
   palette = "Set2",
   domain = sales_geocoded$TERRITORY
 )
 
 sales_map <- leaflet(sales_geocoded) %>%
-  addProviderTiles(providers$CartoDB.DarkMatter) %>%
-  addCircleMarkers(
+  addProviderTiles(providers$Esri.WorldStreetMap) %>%
+  addCircleMarkers( # just refer to the documentation for this one, it is pretty simple from there.
     lng = ~longitude,
     lat = ~latitude,
     radius = ~bubble_size,
@@ -49,6 +48,8 @@ sales_map <- leaflet(sales_geocoded) %>%
     fillColor = ~pal(TERRITORY),
     fillOpacity = 0.75,
     stroke = FALSE,
+    
+    #this will probably go, but I felt smart doing this inside of a paste (and it actually worked)
     popup = ~paste0(
       "<strong>", CITY, ", ", COUNTRY, "</strong><br>",
       "Territory: ", TERRITORY, "<br>",
@@ -61,12 +62,16 @@ sales_map <- leaflet(sales_geocoded) %>%
   addLegend(
     position = "bottomright",
     pal = pal,
-    values = ~TERRITORY,
+    values = ~TERRITORY, # using sales_geocoded$TERRITORY would yield the same results, but isn't as tidy
     title = "Territory"
   )
 
 sales_map
 
+# Saving as a file still hasn't come in as useful
+
+# TODO: maybe look into passing these as JSON values to the web? or maybe just read CSV directly?
+# would defeat the point of using R, but maybe there's a way to map all of this onto a three.js globe
 saveWidget(
   sales_map,
   "sales_leaflet_map.html",
