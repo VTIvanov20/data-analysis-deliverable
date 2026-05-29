@@ -80,19 +80,32 @@ get_rate_to_eur <- function(date, currency) {
     return(1)
   }
   
+  date_str <- format(as.Date(date), "%Y-%m-%d")
+  
   url <- paste0(
     "https://api.frankfurter.dev/v2/rate/",
-    currency,
-    "/EUR",
-    "?date=",
-    date
+    currency, "/EUR",
+    "?date=", date_str
   )
   
-  response <- request(url) %>%
-    req_perform() %>%
-    resp_body_json()
-  
-  response$rate
+  tryCatch({
+    response <- request(url) %>%
+      req_perform() %>%
+      resp_body_json()
+    
+    rate <- response$rate
+    
+    if (is.null(rate) || length(rate) != 1) {
+      warning("No single rate found for ", currency, " on ", date_str)
+      return(NA_real_)
+    }
+    
+    as.numeric(rate)
+    
+  }, error = function(e) {
+    warning("API error for ", currency, " on ", date_str, ": ", e$message)
+    return(NA_real_)
+  })
 }
 
 # Parse order dates and attach currency
@@ -105,11 +118,27 @@ dataset_with_currency <- dataset %>%
   ) %>%
   left_join(country_currency, by = "COUNTRY")
 
+
+# Parse dates and attach currency
+dataset_with_currency <- dataset2 %>%
+  mutate(
+    order_date = as_date(parse_date_time(
+      ORDERDATE,
+      orders = c("mdy HMS", "mdy", "ymd HMS", "ymd")
+    ))
+  ) %>%
+  left_join(country_currency, by = "COUNTRY")
+
+
+
 # Get one historical exchange rate per date/currency combination
 historical_rates <- dataset_with_currency %>%
   distinct(order_date, currency) %>%
   mutate(
-    exchange_rate_to_eur = map2_dbl(order_date, currency, get_rate_to_eur)
+    exchange_rate_to_eur = map2_dbl(order_date, currency, function(d, c) {
+      Sys.sleep(0.05)  # gentle rate-limiting for the api calls
+      get_rate_to_eur(d, c)
+    })
   )
 
 # Get today's exchange rate per currency for popup display
@@ -124,11 +153,14 @@ dataset_eur <- dataset_with_currency %>%
   left_join(historical_rates, by = c("order_date", "currency")) %>%
   left_join(today_rates, by = "currency") %>%
   mutate(
-    sales_eur = SALES * exchange_rate_to_eur
+    # Used historical rate as a fallback to today's rate if it is missing
+    effective_rate = coalesce(exchange_rate_to_eur, today_exchange_rate_to_eur),
+    sales_eur = SALES * effective_rate
   )
 
 
 # =========== API END ===========
+
 
 # A small chain of piping operations to get sales by location
 # most important step here is basically that we decided to remove the NA values from the dataset and work from there
