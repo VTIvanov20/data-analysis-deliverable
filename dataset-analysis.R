@@ -11,7 +11,7 @@ library(httr2)          # http requests to exchange API
 
 # =========== Setup of data ===========
 dataset <- read_csv(
-  "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/sales_data_sample.csv",
+  "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/data/sales_data_sample.csv",
   locale = locale(encoding = "latin1")
 )
 
