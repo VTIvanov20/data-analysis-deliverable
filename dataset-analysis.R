@@ -8,13 +8,12 @@ library(htmlwidgets)    # read about this and wanted to experiment with saving t
 library(lubridate)      
 library(httr2)          # http requests to exchange API
 
+
+# =========== Setup of data ===========
 dataset <- read_csv(
   "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/sales_data_sample.csv",
   locale = locale(encoding = "latin1")
 )
-
-# we get 25 entries -> therefore, we have 25 columns
-colnames(dataset)
 
 apac_dataset <- read_csv(
   "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/data/apac_countries.csv"
@@ -24,61 +23,50 @@ apac_countries <- apac_dataset$Country
 
 dataset <- dataset %>% 
   mutate(
-    TERRITORY = if_else(
-      COUNTRY %in% apac_countries,
-      "APAC",
-      TERRITORY
-    ),
-    TERRITORY = if_else(
-      COUNTRY %in% c("USA", "Canada", "Mexico"),
-      "NA",
-      TERRITORY
-    )
+    TERRITORY = if_else(COUNTRY %in% apac_countries,               "APAC", TERRITORY),
+    TERRITORY = if_else(COUNTRY %in% c("USA", "Canada", "Mexico"), "NA", TERRITORY)
   )
 
-# =========== API START ===========
+
+# we get all countries so we can map them out
+unique(dataset$COUNTRY)
+
 
 # Country -> local currency
 # Countries already using EUR are mapped to EUR.
-
-# we get all countries
-unique(dataset$COUNTRY)
-
 country_currency <- tribble(
   ~COUNTRY,        ~currency,
+  "Canada",       "CAD", # start of NA
   "USA",          "USD",
+  "Mexico",       "MXN",
+  "Ireland",      "EUR", # start of EMEA
   "France",       "EUR",
-  "Norway",       "NOK",
-  "Australia",    "AUD",
   "Finland",      "EUR",
   "Austria",      "EUR",
-  "UK",           "GBP",
   "Spain",        "EUR",
-  "Sweden",       "SEK",
-  "Singapore",    "SGD",
-  "Canada",       "CAD",
-  "Japan",        "JPY",
-  "Italy",        "EUR",
-  "Denmark",      "DKK",
+  "Italy",        "EUR",  
   "Belgium",      "EUR",
-  "Philippines",  "PHP",
   "Germany",      "EUR",
+  "Norway",       "NOK",
+  "Denmark",      "DKK",
+  "UK",           "GBP",
   "Switzerland",  "CHF",
-  "Ireland",      "EUR",
-  "Mexico",       "MXN"
+  "Sweden",       "SEK",
+  "Australia",    "AUD", # start of APAC
+  "Japan",        "JPY",
+  "Singapore",    "SGD",
+  "Philippines",  "PHP"
 )
+
+
+# =========== API currency conversions ===========
 
 # Did this to get the rate for 1 unit of local currency in EUR
 # For example: USD -> EUR means 1 USD = x EUR
 # solution: total_USD * exchange_rate = total_EUR
 get_rate_to_eur <- function(date, currency) {
-  if (is.na(date) || is.na(currency)) {
-    return(NA_real_)
-  }
-  
-  if (currency == "EUR") {
-    return(1)
-  }
+  if (is.na(date) || is.na(currency)) return(NA_real_)
+  if (currency == "EUR") return(1)
   
   date_str <- format(as.Date(date), "%Y-%m-%d")
   
@@ -108,6 +96,7 @@ get_rate_to_eur <- function(date, currency) {
   })
 }
 
+
 # Parse order dates and attach currency
 dataset_with_currency <- dataset %>%
   mutate(
@@ -130,7 +119,6 @@ dataset_with_currency <- dataset2 %>%
   left_join(country_currency, by = "COUNTRY")
 
 
-
 # Get one historical exchange rate per date/currency combination
 historical_rates <- dataset_with_currency %>%
   distinct(order_date, currency) %>%
@@ -141,12 +129,14 @@ historical_rates <- dataset_with_currency %>%
     })
   )
 
+
 # Get today's exchange rate per currency for popup display
 today_rates <- dataset_with_currency %>%
   distinct(currency) %>%
   mutate(
     today_exchange_rate_to_eur = map_dbl(currency, ~ get_rate_to_eur(Sys.Date(), .x))
   )
+
 
 # Add EUR sales to the original dataset
 dataset_eur <- dataset_with_currency %>%
@@ -159,7 +149,7 @@ dataset_eur <- dataset_with_currency %>%
   )
 
 
-# =========== API END ===========
+# =========== end of API-related tasks | start of main piping operations ===========
 
 
 # A small chain of piping operations to get sales by location
@@ -167,35 +157,31 @@ dataset_eur <- dataset_with_currency %>%
 sales_by_location <- dataset_eur %>%
   group_by(CITY, COUNTRY, TERRITORY, currency, today_exchange_rate_to_eur) %>%
   summarise(
-    total_sales_eur = sum(sales_eur, na.rm = TRUE),
-    total_quantity = sum(QUANTITYORDERED, na.rm = TRUE),
-    number_of_orders = n_distinct(ORDERNUMBER),
-    product_lines = paste(unique(PRODUCTLINE), collapse = ", "),
+    total_sales_eur   = sum(sales_eur, na.rm = TRUE),
+    total_quantity    = sum(QUANTITYORDERED, na.rm = TRUE),
+    number_of_orders  = n_distinct(ORDERNUMBER),
+    product_lines     = paste(unique(PRODUCTLINE), collapse = ", "),
     .groups = "drop"
   ) %>%
   mutate(
     location = paste(CITY, COUNTRY, sep = ", ")
   )
 
-# This renders all of the geolocation data on the map and creates markers via colored bubbles
-sales_geocoded <- sales_by_location %>%
-  geocode(
-    address = location,
-    method = "osm",
-    lat = latitude,
-    long = longitude
-  ) %>%
-  filter(!is.na(latitude), !is.na(longitude)) %>%
-  mutate(
-    bubble_size = rescale(total_sales_eur, to = c(4, 25))
-  )
 
+# =========== Placing points in locations by address ===========
+# This renders all of the geolocation data on the map and creates markers via colored bubbles
+
+sales_geocoded <- sales_by_location %>%
+  geocode(address = location, method = "osm", lat = latitude, long = longitude) %>%
+  filter(!is.na(latitude), !is.na(longitude)) %>%
+    mutate(
+      bubble_size = rescale(total_sales_eur, to = c(4, 25))
+    )
+
+# =========== Rendering of the map ===========
 # defining the palette that will be used
 # saw online that there are sets, so we tried it out
-pal <- colorFactor(
-  palette = "Set2",
-  domain = sales_geocoded$TERRITORY
-)
+pal <- colorFactor(palette = "Set2", domain = sales_geocoded$TERRITORY)
 
 sales_map <- leaflet(sales_geocoded) %>%
   addProviderTiles(providers$Esri.WorldStreetMap) %>%
@@ -213,8 +199,7 @@ sales_map <- leaflet(sales_geocoded) %>%
       "<strong>", CITY, ", ", COUNTRY, "</strong><br>",
       "Territory: ", TERRITORY, "<br>",
       "Total sales: €", comma(round(total_sales_eur, 2)), "<br>",
-      "Today's exchange rate: 1 ", currency, " = €",
-      round(today_exchange_rate_to_eur, 4), "<br>",
+      "Today's rate: 1 ", currency, " = €", round(today_exchange_rate_to_eur, 4), "<br>",
       "Quantity ordered: ", comma(total_quantity), "<br>",
       "Number of orders: ", number_of_orders, "<br>",
       "Product lines: ", product_lines
@@ -227,15 +212,14 @@ sales_map <- leaflet(sales_geocoded) %>%
     title = "Territory"
   )
 
+
+# Visualising the final map
 sales_map
+
 
 # Saving as a file still hasn't come in as useful
 
 # TODO: maybe look into passing these as JSON values to the web? or maybe just read CSV directly?
 # would defeat the point of using R, but maybe there's a way to map all of this onto a three.js globe
-saveWidget(
-  sales_map,
-  "sales_leaflet_map.html",
-  selfcontained = TRUE
-)
+saveWidget(sales_map, "sales_leaflet_map.html", selfcontained = TRUE)
 
