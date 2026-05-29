@@ -1,7 +1,14 @@
 import * as THREE from 'three';
+import { useRoute } from 'wouter';
 import { latLonToVector3 } from '../util/coordinateHelper';
 
 export function SalesPoints({ data, onPointClick }) {
+    const [matchStart] = useRoute('/start');
+
+    if (!matchStart) {
+        return null;
+    }
+
     return (
         <group name="SalesPoints">
             {data.map((item, index) => {
