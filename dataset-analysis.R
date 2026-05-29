@@ -11,6 +11,30 @@ dataset <- read_csv(
   locale = locale(encoding = "latin1")
 )
 
+apac_dataset <- read_csv(
+  "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/data/apac_countries.csv"
+)
+
+apac_countries <- apac_dataset$Country
+
+dataset <- dataset %>% 
+  mutate(
+    TERRITORY = if_else(
+      COUNTRY %in% apac_countries,
+      "APAC",
+      TERRITORY
+    )
+  )
+
+dataset <- dataset %>% 
+  mutate(
+    TERRITORY = if_else(
+      COUNTRY %in% c("USA", "Canada", "Mexico"),
+      "NA",
+      TERRITORY
+    )
+  )
+
 # A small chain of piping operations to get only sales by location
 # most important step here is basically that we decided to remove the NA values from the dataset and work from there
 sales_by_location <- dataset %>%
@@ -26,7 +50,14 @@ sales_by_location <- dataset %>%
     location = paste(CITY, COUNTRY, sep = ", ")
   )
 
-sales_geocoded <- sales_geocoded %>%
+sales_geocoded <- sales_by_location %>%
+  geocode(
+    address = location,
+    method = "osm",
+    lat = latitude,
+    long = longitude
+  ) %>%
+  filter(!is.na(latitude), !is.na(longitude)) %>%
   mutate(
     bubble_size = rescale(total_sales, to = c(4, 25))
   )

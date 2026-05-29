@@ -22,5 +22,22 @@ dataset <- dataset %>%
     )
   )
 
+# check 1:
+unique(dataset$TERRITORY) # this should return: NA, "EMEA", "APAC"
+
+
+dataset <- dataset %>% 
+  mutate(
+    TERRITORY = if_else(
+      COUNTRY %in% c("USA", "Canada", "Mexico"),
+      "NA",
+      TERRITORY
+    )
+  )
+
+# check 2:
+unique(dataset$TERRITORY) # this should return: "NA", "EMEA", "APAC"
+
+
 # for convenience again:
 # View(dataset)
