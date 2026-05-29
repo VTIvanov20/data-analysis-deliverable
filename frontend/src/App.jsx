@@ -14,6 +14,7 @@ import { CoordinateScreen } from './components/CoordinateScreen';
 import { TakeMeThere } from './components/TakeMeThere';
 import { NotRoute } from './components/NotRoute';
 import { PoiOverlay } from './components/PoiOverlay';
+import { MobileWarning } from './components/MobileWarning';
 import geoJsonUrl from '../countries.geojson?url';
 
 import { ChakraProvider } from '@chakra-ui/react'
@@ -138,6 +139,8 @@ function App() {
               poi={selectedPoi}
               onClose={() => setSelectedPoi(null)}
             />
+
+            <MobileWarning />
 
           </div>
         </Router>
