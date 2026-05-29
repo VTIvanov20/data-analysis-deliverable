@@ -1,9 +1,74 @@
 Country,ISO_Alpha_2,ISO_Alpha_3,UN_Subregion
 Afghanistan,AF,AFG,Southern Asia
+American Samoa,AS,ASM,Polynesia
+Armenia,AM,ARM,Western Asia
 Australia,AU,AUS,Australia and New Zealand
+Azerbaijan,AZ,AZE,Western Asia
+Bahrain,BH,BHR,Western Asia
+Bangladesh,BD,BGD,Southern Asia
+Bhutan,BT,BTN,Southern Asia
+Brunei Darussalam,BN,BRN,South-Eastern Asia
+Cambodia,KH,KHM,South-Eastern Asia
 China,CN,CHN,Eastern Asia
+Cook Islands,CK,COK,Polynesia
+Fiji,FJ,FJI,Melanesia
+French Polynesia,PF,PYF,Polynesia
+Georgia,GE,GEO,Western Asia
+Guam,GU,GUM,Micronesia
+Hong Kong,HK,HKG,Eastern Asia
 India,IN,IND,Southern Asia
-Indonesia,ID,IDN,South-East Asia
+Indonesia,ID,IDN,South-Eastern Asia
+Iran,IR,IRN,Southern Asia
+Iraq,IQ,IRQ,Western Asia
+Israel,IL,ISR,Western Asia
 Japan,JP,JPN,Eastern Asia
+Jordan,JO,JOR,Western Asia
+Kazakhstan,KZ,KAZ,Central Asia
+Kiribati,KI,KIR,Micronesia
+Kuwait,KW,KWT,Western Asia
+Kyrgyzstan,KG,KGZ,Central Asia
+Lao People's Democratic Republic,LA,LAO,South-Eastern Asia
+Lebanon,LB,LBN,Western Asia
+Macao,MO,MAC,Eastern Asia
+Malaysia,MY,MYS,South-Eastern Asia
+Maldives,MV,MDV,Southern Asia
+Marshall Islands,MH,MHL,Micronesia
+Micronesia (Federated States of),FM,FSM,Micronesia
+Mongolia,MN,MNG,Eastern Asia
+Myanmar,MM,MMR,South-Eastern Asia
+Nauru,NR,NRU,Micronesia
+Nepal,NP,NPL,Southern Asia
+New Caledonia,NC,NCL,Melanesia
 New Zealand,NZ,NZL,Australia and New Zealand
-Singapore,SG,SGP,South-East Asia
+Niue,NU,NIU,Polynesia
+Norfolk Island,NF,NFK,Australia and New Zealand
+Northern Mariana Islands,MP,MNP,Micronesia
+Oman,OM,OMN,Western Asia
+Pakistan,PK,PAK,Southern Asia
+Palau,PW,PLW,Micronesia
+Palestine, State of,PS,PSE,Western Asia
+Papua New Guinea,PG,PNG,Melanesia
+Philippines,PH,PHL,South-Eastern Asia
+Pitcairn,PN,PCN,Polynesia
+Qatar,QA,QAT,Western Asia
+Republic of Korea,KR,KOR,Eastern Asia
+Samoa,WS,WSM,Polynesia
+Saudi Arabia,SA,SAU,Western Asia
+Singapore,SG,SGP,South-Eastern Asia
+Solomon Islands,SB,SLB,Melanesia
+Sri Lanka,LK,LKA,Southern Asia
+Syrian Arab Republic,SY,SYR,Western Asia
+Tajikistan,TJ,TJK,Central Asia
+Thailand,TH,THA,South-Eastern Asia
+Timor-Leste,TL,TLS,South-Eastern Asia
+Tokelau,TK,TKL,Polynesia
+Tonga,TO,TON,Polynesia
+Türkiye,TR,TUR,Western Asia
+Turkmenistan,TM,TKM,Central Asia
+Tuvalu,TV,TUV,Polynesia
+United Arab Emirates,AE,ARE,Western Asia
+Uzbekistan,UZ,UZB,Central Asia
+Vanuatu,VU,VUT,Melanesia
+Viet Nam,VN,VNM,South-Eastern Asia
+Wallis and Futuna,WF,WLF,Polynesia
+Yemen,YE,YEM,Western Asia
