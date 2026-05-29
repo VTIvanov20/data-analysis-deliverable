@@ -1,15 +1,20 @@
-#install.packages(c("tidyverse", "leaflet", "tidygeocoder", "scales", "htmlwidgets"))
+#install.packages(c("tidyverse", "leaflet", "tidygeocoder", "scales", "htmlwidgets", "lubridate", "httr2))
 
 library(tidyverse)
-library(leaflet)        # nice to see this is also in r
+library(leaflet)        # nice to see this also exists in r, love this library when doing web
 library(tidygeocoder)   # proved quite useful
-library(scales)
+library(scales)         # used in the map for the marker sizes
 library(htmlwidgets)    # read about this and wanted to experiment with saving this as an html file
+library(lubridate)      
+library(httr2)          # http requests to exchange API
 
 dataset <- read_csv(
   "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/sales_data_sample.csv",
   locale = locale(encoding = "latin1")
 )
+
+# we get 25 entries -> therefore, we have 25 columns
+colnames(dataset)
 
 apac_dataset <- read_csv(
   "/Users/valeryivanov/Desktop/IMC Krems/Data Analysis/data-analysis-deliverable/data/apac_countries.csv"
@@ -23,11 +28,7 @@ dataset <- dataset %>%
       COUNTRY %in% apac_countries,
       "APAC",
       TERRITORY
-    )
-  )
-
-dataset <- dataset %>% 
-  mutate(
+    ),
     TERRITORY = if_else(
       COUNTRY %in% c("USA", "Canada", "Mexico"),
       "NA",
@@ -35,12 +36,106 @@ dataset <- dataset %>%
     )
   )
 
-# A small chain of piping operations to get only sales by location
+# =========== API START ===========
+
+# Country -> local currency
+# Countries already using EUR are mapped to EUR.
+
+# we get all countries
+unique(dataset$COUNTRY)
+
+country_currency <- tribble(
+  ~COUNTRY,        ~currency,
+  "USA",          "USD",
+  "France",       "EUR",
+  "Norway",       "NOK",
+  "Australia",    "AUD",
+  "Finland",      "EUR",
+  "Austria",      "EUR",
+  "UK",           "GBP",
+  "Spain",        "EUR",
+  "Sweden",       "SEK",
+  "Singapore",    "SGD",
+  "Canada",       "CAD",
+  "Japan",        "JPY",
+  "Italy",        "EUR",
+  "Denmark",      "DKK",
+  "Belgium",      "EUR",
+  "Philippines",  "PHP",
+  "Germany",      "EUR",
+  "Switzerland",  "CHF",
+  "Ireland",      "EUR",
+  "Mexico",       "MXN"
+)
+
+# Did this to get the rate for 1 unit of local currency in EUR
+# For example: USD -> EUR means 1 USD = x EUR
+# solution: total_USD * exchange_rate = total_EUR
+get_rate_to_eur <- function(date, currency) {
+  if (is.na(date) || is.na(currency)) {
+    return(NA_real_)
+  }
+  
+  if (currency == "EUR") {
+    return(1)
+  }
+  
+  url <- paste0(
+    "https://api.frankfurter.dev/v2/rate/",
+    currency,
+    "/EUR",
+    "?date=",
+    date
+  )
+  
+  response <- request(url) %>%
+    req_perform() %>%
+    resp_body_json()
+  
+  response$rate
+}
+
+# Parse order dates and attach currency
+dataset_with_currency <- dataset %>%
+  mutate(
+    order_date = as_date(parse_date_time(
+      ORDERDATE,
+      orders = c("mdy HMS", "mdy", "ymd HMS", "ymd")
+    ))
+  ) %>%
+  left_join(country_currency, by = "COUNTRY")
+
+# Get one historical exchange rate per date/currency combination
+historical_rates <- dataset_with_currency %>%
+  distinct(order_date, currency) %>%
+  mutate(
+    exchange_rate_to_eur = map2_dbl(order_date, currency, get_rate_to_eur)
+  )
+
+# Get today's exchange rate per currency for popup display
+today_rates <- dataset_with_currency %>%
+  distinct(currency) %>%
+  mutate(
+    today_exchange_rate_to_eur = map_dbl(currency, ~ get_rate_to_eur(Sys.Date(), .x))
+  )
+
+# Add EUR sales to the original dataset
+dataset_eur <- dataset_with_currency %>%
+  left_join(historical_rates, by = c("order_date", "currency")) %>%
+  left_join(today_rates, by = "currency") %>%
+  mutate(
+    sales_eur = SALES * exchange_rate_to_eur
+  )
+
+
+# =========== API END ===========
+
+# A small chain of piping operations to get sales by location
 # most important step here is basically that we decided to remove the NA values from the dataset and work from there
-sales_by_location <- dataset %>%
-  group_by(CITY, COUNTRY, TERRITORY) %>%
+sales_by_location <- dataset_eur %>%
+  group_by(CITY, COUNTRY, TERRITORY, currency, today_exchange_rate_to_eur) %>%
   summarise(
-    total_sales = sum(SALES, na.rm = TRUE),
+    total_sales_eur = sum(sales_eur, na.rm = TRUE),
     total_quantity = sum(QUANTITYORDERED, na.rm = TRUE),
     number_of_orders = n_distinct(ORDERNUMBER),
     product_lines = paste(unique(PRODUCTLINE), collapse = ", "),
@@ -50,6 +145,7 @@ sales_by_location <- dataset %>%
     location = paste(CITY, COUNTRY, sep = ", ")
   )
 
+# This renders all of the geolocation data on the map and creates markers via colored bubbles
 sales_geocoded <- sales_by_location %>%
   geocode(
     address = location,
@@ -59,7 +155,7 @@ sales_geocoded <- sales_by_location %>%
   ) %>%
   filter(!is.na(latitude), !is.na(longitude)) %>%
   mutate(
-    bubble_size = rescale(total_sales, to = c(4, 25))
+    bubble_size = rescale(total_sales_eur, to = c(4, 25))
   )
 
 # defining the palette that will be used
@@ -84,7 +180,9 @@ sales_map <- leaflet(sales_geocoded) %>%
     popup = ~paste0(
       "<strong>", CITY, ", ", COUNTRY, "</strong><br>",
       "Territory: ", TERRITORY, "<br>",
-      "Total sales: $", comma(round(total_sales, 2)), "<br>",
+      "Total sales: €", comma(round(total_sales_eur, 2)), "<br>",
+      "Today's exchange rate: 1 ", currency, " = €",
+      round(today_exchange_rate_to_eur, 4), "<br>",
       "Quantity ordered: ", comma(total_quantity), "<br>",
       "Number of orders: ", number_of_orders, "<br>",
       "Product lines: ", product_lines
@@ -108,3 +206,4 @@ saveWidget(
   "sales_leaflet_map.html",
   selfcontained = TRUE
 )
+
