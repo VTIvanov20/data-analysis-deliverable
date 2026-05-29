@@ -78,16 +78,29 @@ export function StartScreen({ ...props }) {
                         <meshBasicMaterial />
                         {countryDataContext.loadingStatus}   
                     </HoverText> :
-                    <HoverText
-                        position={[0, -0.5, 0]}
-                        font={RalewaySemiBoldFont}
-                        fontSize={0.2}
-                        hoverColor="red"
-                        onClick={() => setLocation('/start')}
-                    >
-                        <meshBasicMaterial />
-                        Click this text to browse some data points!
-                    </HoverText>
+                    <>
+                        <HoverText
+                            position={[0, -0.5, 0]}
+                            font={RalewaySemiBoldFont}
+                            fontSize={0.2}
+                            hoverColor="red"
+                            onClick={() => setLocation('/start')}
+                        >
+                            <meshBasicMaterial />
+                            Click this text to browse some data points!
+                        </HoverText>
+
+                        <HoverText
+                            position={[0, -0.74, 0]}
+                            font={RalewaySemiBoldFont}
+                            fontSize={0.12}
+                            opacity={0.8}
+                            hoverColor={null}
+                        >
+                            <meshBasicMaterial />
+                            Made by Valeri, Amina and Luka
+                        </HoverText>
+                    </>
             }
         </group>
     </Suspense>;
