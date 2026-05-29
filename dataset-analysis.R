@@ -7,6 +7,7 @@ library(scales)         # used in the map for the marker sizes
 library(htmlwidgets)    # read about this and wanted to experiment with saving this as an html file
 library(lubridate)      
 library(httr2)          # http requests to exchange API
+library(jsonlite)
 
 
 # =========== Setup of data ===========
@@ -222,4 +223,11 @@ sales_map
 # TODO: maybe look into passing these as JSON values to the web? or maybe just read CSV directly?
 # would defeat the point of using R, but maybe there's a way to map all of this onto a three.js globe
 saveWidget(sales_map, "sales_leaflet_map.html", selfcontained = TRUE)
+
+
+sales_geocoded %>%
+  select(CITY, COUNTRY, TERRITORY, currency, latitude, longitude,
+         total_sales_eur, total_quantity, number_of_orders, product_lines) %>%
+  toJSON(pretty = TRUE) %>%
+  write("sales_data.json")
 

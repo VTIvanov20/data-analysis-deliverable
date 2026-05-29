@@ -1,0 +1,32 @@
+{
+  "name": "geonomy",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@chakra-ui/icons": "^2.0.17",
+    "@chakra-ui/react": "^2.4.9",
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "@mui/icons-material": "~5.11.0",
+    "@mui/material": "~5.11.7",
+    "@react-three/drei": "~9.56.12",
+    "@react-three/fiber": "~8.10.1",
+    "braintree-jsdoc-template": "~3.3.0",
+    "framer-motion": "^9.0.0",
+    "react": "~18.2.0",
+    "react-dom": "~18.2.0",
+    "react-spring": "~9.6.1",
+    "styled-components": "~5.3.3",
+    "three": "~0.149.0",
+    "wouter": "~2.9.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "~3.0.1",
+    "vite": "~4.0.5"
+  }
+}
