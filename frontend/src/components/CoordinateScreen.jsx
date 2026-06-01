@@ -5,7 +5,7 @@ import CountryDataContext from "../CountryDataContext";
 import { Information } from "./Information"
 
 export function CoordinateScreen({ ...props }) {
-    const [match, params] = useRoute('/map/:country/learn_more');
+    const [match, params] = useRoute('/map/:country/leneContearn_more');
     const [country, setCountry] = useState(null);
     const [countryData, setCountryData] = useState();
     const countryDataContext = useContext(CountryDataContext);

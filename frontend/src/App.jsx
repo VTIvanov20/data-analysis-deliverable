@@ -5,7 +5,7 @@ import { Html, OrbitControls, Stars } from '@react-three/drei';
 import CountryDataContext from './CountryDataContext';
 import { StartScreen } from './components/StartScreen';
 import { useEffect, useRef, useState } from 'react';
-import { Switch, Router, Route } from "wouter"
+import { Switch, Router, Route, useLocation, useRoute } from "wouter"
 import { Rotate } from './components/Rotate';
 import { useCountryData } from './util/countryData';
 import { Position } from './components/Position';
@@ -16,6 +16,7 @@ import { NotRoute } from './components/NotRoute';
 import { PoiOverlay } from './components/PoiOverlay';
 import { MobileWarning } from './components/MobileWarning';
 import geoJsonUrl from '../countries.geojson?url';
+import { getCountryRotation } from './util/countryFocus';
 
 import { ChakraProvider } from '@chakra-ui/react'
 /**
@@ -38,6 +39,34 @@ function getRandomInt(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+function CountryFocusPosition({ data, globeRef }) {
+  const [match, params] = useRoute('/map/:country');
+
+  if (!match || !data?.features) {
+    return null;
+  }
+
+  const selectedCountryName = decodeURIComponent(params.country);
+
+  const selectedCountryFeature = data.features.find(
+    feature => feature.properties.ADMIN === selectedCountryName
+  );
+
+  const selectedCountryRotation = selectedCountryFeature
+    ? getCountryRotation(selectedCountryFeature)
+    : [0, 0, 0];
+
+  return (
+    <Position
+      refToPosition={globeRef}
+      position={[4, 0, -3]}
+      rotation={selectedCountryRotation}
+      animate
+      animateSpeed={0.1}
+    />
+  );
+}
+
 // The App() function acts as a main function. The entirety of the website's pages are based on this function.
 function App() {
   const [loading, loadingStatus, error, data] = useCountryData(geoJsonUrl);
@@ -51,7 +80,7 @@ function App() {
     /* Styling for the main page. */
     <>
       <ChakraProvider>
-        <Router>
+        <Router base="/data-analysis-deliverable">
           <div 
             style={{
               position: "relative",
@@ -123,8 +152,16 @@ function App() {
                     {/* Take me there page - Orbit Controls are now locked again & the Take Me There assets are loaded. */}
                     <Route path="/map/:country">
                       <TakeMeThere />
-                      <PositionCamera position={[0, 0, 0]} rotation={[0, 0, 0]} />
-                      <Position refToPosition={globeRef} position={[4, 0, -3]} rotation={[getRandomInt(0, 6), getRandomInt(0, 6), 0]} animate animateSpeed={0.1} />
+
+                      <PositionCamera
+                        position={[0, 0, 0]}
+                        rotation={[0, 0, 0]}
+                      />
+
+                      <CountryFocusPosition 
+                        data={data} 
+                        globeRef={globeRef} 
+                      />
                     </Route>
                     {/* Information page - The globe is hidden from the user & all of the Information screen assets are shown. */}
                     <Route path="/map/:country/learn_more">

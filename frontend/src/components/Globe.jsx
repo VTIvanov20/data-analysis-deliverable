@@ -198,9 +198,8 @@ const Globe = forwardRef(({ onPointSelect, ...props }, ref) => {
     }, [updateFrame]);
     const glowMaterial = useMemo(() => getFresnelMat(), []);
 return (
-    <group {...props}>
+    <group {...props} ref={ref}>
         <mesh
-            ref={ref}
             onPointerDown={e => setClicked(true)}
             onPointerMove={e => clicked ? setDragged(true) : null}
             onClick={e => {
